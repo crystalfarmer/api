@@ -1,0 +1,219 @@
+var LIST_ID = '#########'; 
+//EOY Campaign Data
+function mailchimpReports() {
+  var ui = SpreadsheetApp.getUi();
+  var documentProperties = PropertiesService.getDocumentProperties();
+  var scriptValue = ui.prompt('API Key' , ui.ButtonSet.OK);
+  documentProperties.setProperty('apikey', scriptValue.getResponseText());
+
+  // URL and params for the Mailchimp API
+  var root = 'https://us7.api.mailchimp.com/3.0/';
+  var endpoint = 'reports?count=100';
+   
+  // parameters for url fetch
+  var params = {
+    'method': 'GET',
+    'muteHttpExceptions': true,
+    'headers': {
+      'Authorization': 'apikey ' + documentProperties.getProperty('apikey')
+    }
+  };
+   
+  // call the Mailchimp API
+  var response = UrlFetchApp.fetch(root+endpoint, params);
+  var data = response.getContentText();
+  var json = JSON.parse(data);
+ 
+  // get just campaign data
+  var campaigns = json['reports'];
+   // blank array to hold the campaign data for Sheet
+    var campaignReport = [];
+  Logger.log(campaigns); 
+    // Add the campaign data to the array
+    for (var i = 0; i < campaigns.length; i++) {
+       
+      // put the campaign data into a double array for Google Sheets
+    
+        campaignReport.push([
+          i,
+          campaigns[i]["send_time"].substr(0,10),
+          campaigns[i]["campaign_title"],
+          campaigns[i]["subject_line"],
+          campaigns[i]["emails_sent"],
+          campaigns[i]["unsubscribed"],
+          campaigns[i]["opens"]["open_rate"],  
+          campaigns[i]["clicks"]["click_rate"],
+          campaigns[i]["ecommerce"]["total_revenue"]
+        ]);
+    }
+     
+    // Log the campaignData array
+    //Logger.log(campaignReport);
+     
+    // select the campaign output sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('EOY Campaigns');
+
+    // format columns
+    sheet.getRange(2, 6, sheet.getLastRow() - 1, 1)
+    .setNumberFormat("##0");
+    sheet.getRange(2, 7, sheet.getLastRow() - 1, 1)
+    .setNumberFormat("#.00");
+    sheet.getRange(2, 8, sheet.getLastRow() - 1, 1)
+    .setNumberFormat("#.00");
+    sheet.getRange(2, 9, sheet.getLastRow() - 1, 1)
+    .setNumberFormat("$#00.00");
+
+    // calculate the number of rows and columns needed
+    var numRows = campaignReport.length;
+    var numCols = campaignReport[0].length;
+     
+    // output the numbers to the sheet
+    sheet.getRange(2,1,numRows,numCols).setValues(campaignReport);
+     
+    }
+
+function listTags(){
+    var ui = SpreadsheetApp.getUi();
+    var documentProperties = PropertiesService.getDocumentProperties();
+    var scriptValue = ui.prompt('API Key' , ui.ButtonSet.OK);
+    documentProperties.setProperty('apikey', scriptValue.getResponseText());  
+    
+    var root = 'https://us7.api.mailchimp.com/3.0/';
+    var endpoint = root + 'lists/' + LIST_ID + '/segments?type=static&count=100';
+   
+    var params = {
+      'method': 'GET',
+      'muteHttpExceptions': false,
+      'headers': {
+        'Authorization': 'apikey ' + documentProperties.getProperty('apikey')
+      }
+    };  
+
+    var response = UrlFetchApp.fetch(endpoint, params);
+    var data = response.getContentText();
+    var json = JSON.parse(data);
+ 
+    var tags = json['segments'];
+    var tagList = [];
+    
+    for (var i = 0; i < tags.length; i++) {
+       
+      // put the campaign data into a double array for Google Sheets
+    
+        tagList.push([
+          i,
+          tags[i]["name"],
+          tags[i]["id"],
+          tags[i]["member_count"]
+        ]);
+    }
+      
+    // select the output sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Tags');
+
+    // calculate the number of rows and columns needed
+    var numRows = tagList.length;
+    var numCols = tagList[0].length;
+     
+    // output the numbers to the sheet
+    sheet.getRange(2,1,numRows,numCols).setValues(tagList);
+}
+
+function listProducts(){
+    var ui = SpreadsheetApp.getUi();
+    var documentProperties = PropertiesService.getDocumentProperties();
+    var scriptValue = ui.prompt('API Key' , ui.ButtonSet.OK);
+    documentProperties.setProperty('apikey', scriptValue.getResponseText());
+    
+    STORE_ID = '5fff65a3a7c39'
+    
+    var root = 'https://us7.api.mailchimp.com/3.0/';
+    var endpoint = root + 'ecommerce/stores/' + STORE_ID +'/products?count=1622';
+    
+    var params = {
+      'method': 'GET',
+      'muteHttpExceptions': false,
+      'headers': {
+        'Authorization': 'apikey ' + documentProperties.getProperty('apikey')
+      }
+    };  
+
+    var response = UrlFetchApp.fetch(endpoint, params);
+    var data = response.getContentText();
+    var json = JSON.parse(data);
+ 
+    var tags = json['products'];
+    var productList = [];
+    
+    for (var i = 0; i < tags.length; i++) {
+       
+      // put the campaign data into a double array for Google Sheets
+    
+        productList.push([
+          i,
+          tags[i]["id"],
+          tags[i]["title"],
+          tags[i]["handle"]
+        ]);
+    }
+      
+    // select the output sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Products');
+
+    // calculate the number of rows and columns needed
+    var numRows = productList.length;
+    var numCols = productList[0].length;
+     
+    // output the numbers to the sheet
+    sheet.getRange(2,1,numRows,numCols).setValues(productList);
+}
+
+function listSegments(){
+    var ui = SpreadsheetApp.getUi();
+  var documentProperties = PropertiesService.getDocumentProperties();
+  var scriptValue = ui.prompt('API Key' , ui.ButtonSet.OK);
+  documentProperties.setProperty('apikey', scriptValue.getResponseText());
+  
+  var root = 'https://us7.api.mailchimp.com/3.0/';
+    var endpoint = root + 'lists/' + LIST_ID + '/segments?type=saved&count=1000';
+   
+    var params = {
+      'method': 'GET',
+      'muteHttpExceptions': false,
+      'headers': {
+        'Authorization': 'apikey ' + documentProperties.getProperty('apikey')
+      }
+    };  
+
+    var response = UrlFetchApp.fetch(endpoint, params);
+    var data = response.getContentText();
+    var json = JSON.parse(data);
+ 
+    var segs = json['segments'];
+    var segList = [];
+    
+    for (var i = 0; i < segs.length; i++) {
+       
+        segList.push([
+          i,
+          segs[i]["name"],
+          segs[i]["id"],
+          segs[i]["member_count"]
+        ]);
+    }
+      
+    // select the output sheet
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('Segments');
+
+    // calculate the number of rows and columns needed
+    var numRows = segList.length;
+    var numCols = segList[0].length;
+     
+    // output the numbers to the sheet
+    sheet.getRange(2,1,numRows,numCols).setValues(segList);   
+   
+}
