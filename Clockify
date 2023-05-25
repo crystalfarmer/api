@@ -1,0 +1,119 @@
+//This somewhat works. It pulls the reports from Clockify by user and month and outputs it to a spreadsheet.
+
+function myClockify(){
+var headers = {	
+    'X-Api-Key': '#############################3' 
+  }; 
+  
+  var user = "5fef7a8da094b839038067ff"
+  var workspace = "637bcf989639e61a3c53b94d"
+  // to pull user info var url = 'https://api.clockify.me/api/v1/' + user;
+  // to pull time entries  var url = 'https://api.clockify.me/api/v1/workspaces/' + workspace + '/user/' + user + '/time-entries'
+  // to pull reports USE POST var url = 'https://reports.api.clockify.me/v1/workspaces/' + workspace + '/reports/summary';
+  
+  var url = 'https://reports.api.clockify.me/v1/workspaces/' + workspace + '/reports/summary';
+  var payload = {
+  // REQUIRED
+  "dateRangeStart": "2022-11-01T00:00:00.000",
+  "dateRangeEnd": new Date().toISOString(),
+  "summaryFilter": {
+    "groups": [
+      //"PROJECT",
+      "MONTH",
+      "USER"
+    ]}
+    }
+    //POST when getting reports, GET otherwise and remove payload
+    var options = {
+    'method': 'post', //post for reports, get for time and user entries
+    'headers': headers,
+    "contentType" : "application/json",
+    'muteHttpExceptions': false,
+    'payload' : JSON.stringify(payload)
+  }
+  try {
+      var response = UrlFetchApp.fetch(url, options);
+      var data = JSON.parse(response);
+      Logger.log(response);
+      
+      dataSet = data.groupOne;
+      var rows = [], dataex;
+      for (i = 0; i < dataSet.length; i++) {
+        dataex = dataSet[i];
+        rows.push([dataex.name, dataex.duration]); 
+        var spreadsheet = SpreadsheetApp.getActive();
+        var sheet = spreadsheet.getActiveSheet();
+        sheet.getRange(2,1,rows.length,rows[0].length).setValues(rows);
+Logger.log(i);
+          datade = dataex.children;
+          var rowsTwo = [], datay;          
+          for (k = 0; k < datade.length; k++) {
+            datay = datade[k];
+            rowsTwo.push([datay._id, datay.name, datay.duration]);
+            
+          }
+            //will need to add to this as the months go on
+            if (i == 0) {startat = 2;};
+            if (i == 1) {startat = 11;};
+            if (i == 2) {startat = 24;};
+          
+            var spreadsheet = SpreadsheetApp.getActive();
+            var sheet = spreadsheet.getActiveSheet();
+            sheet.getRange(startat,5,rowsTwo.length,rowsTwo[0].length).setValues(rowsTwo);
+          
+      }
+      // make this work somewhere var rows = [Object.keys(dataIWant)]; // Retrieve headers.
+      //add headers for the month of the user column
+      
+  }
+  
+      
+  catch(error) {
+    var result = (error.toString());
+    Logger.log(result);
+  }
+  //add data to the spreadsheet
+  //var data = [report.groupOne];
+   
+  
+}
+
+//calculate the date
+function figureOutDate(){
+  const now = new Date();
+  Logger.log(Utilities.formatDate(now, 'America/New_York', 'MMMM dd, yyyy HH:mm:ss Z'));
+  var month = Date(now.getMonth());
+  var lastmonth = new Date(now.getMonth() - 1);
+  var year = Date(now.getFullYear());
+  Logger.log("Year " + year);
+  Logger.log("Current month: " + month);
+  Logger.log("Last month: " + lastmonth);
+  Logger.log(Utilities.formatDate(lastmonth, 'America/New_York', 'MMMM'));
+  Logger.log(Utilities.formatDate(lastmonth, 'America/New_York', 'MMMM dd, yyyy HH:mm:ss Z'));
+  Logger.log(now.toISOString());
+  }
+
+
+//menu and scripts
+  function createEmptyMenu() {
+   var menu = SpreadsheetApp.getUi().createMenu("⚙️ Admin Settings");
+   menu.addItem("Setting A", "settingA");
+   menu.addToUi();
+  }
+
+  //var ui = SpreadsheetApp.getUi();
+  //var scriptProperties = PropertiesService.getScriptProperties();
+  //var userProperties = PropertiesService.getUserProperties();
+  
+  function addMenu(){
+    ui.createMenu('Save Key')
+      .addItem('Save API Key', 'scriptPrompt')
+      .addToUi();
+  }
+
+  function scriptPrompt(){
+    var scriptValue = ui.prompt('API Key' , ui.ButtonSet.OK);
+    scriptProperties.setProperty('apikey', scriptValue.getResponseText());
+    Logger.log(scriptProperties.getProperty('apikey'));
+    ui.alert('API Key: ' + scriptProperties.getProperty('apikey'), ui.ButtonSet.OK)
+  }
